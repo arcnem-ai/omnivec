@@ -1,0 +1,33 @@
+[project]
+name = "omnivec"
+version = "0.1.0"
+description = "API-first CrewAI asset librarian built on texvec and picvec"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Arcnem AI" }]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "crewai[tools]==1.11.0",
+    "fastapi==0.116.1",
+    "pydantic-settings==2.10.1",
+    "pytest==8.4.2",
+    "python-multipart==0.0.20",
+    "uvicorn==0.35.0",
+]
+keywords = ["crewai", "texvec", "picvec", "asset-librarian", "similarity-search", "railway"]
+
+[project.scripts]
+omnivec = "omnivec.main:main"
+
+[project.urls]
+Homepage = "https://arcnem.ai"
+Repository = "https://github.com/arcnem-ai/omnivec"
+Issues = "https://github.com/arcnem-ai/omnivec/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

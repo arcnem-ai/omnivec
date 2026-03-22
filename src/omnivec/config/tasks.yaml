@@ -1,0 +1,42 @@
+inventory_analysis_task:
+  description: >
+    Review the structured Omnivec analysis payload below and identify the most important findings.
+    Focus on:
+    1. high-signal duplicate groups,
+    2. meaningful document relationships,
+    3. meaningful image relationships,
+    4. overall collection quality and gaps,
+    5. the best next actions for a human curator.
+
+    Use only the facts in the payload. Do not invent file contents or hidden meaning.
+
+    Analysis payload:
+    {analysis_payload}
+  expected_output: >
+    A concise markdown memo with prioritized findings, notable duplicate groups,
+    notable clusters, and practical curation recommendations.
+  agent: inventory_analyst
+
+report_task:
+  description: >
+    Write the final markdown asset librarian report for this upload.
+    Use the analyst memo plus the original structured payload below.
+
+    The report should:
+    - open with a short overview,
+    - summarize supported files and ignored files,
+    - call out exact duplicates,
+    - describe notable document clusters,
+    - describe notable image clusters,
+    - end with concrete cleanup or curation recommendations.
+
+    Keep the tone balanced: useful for discovery and cleanup.
+    Do not include code fences.
+    Do not claim you viewed file contents beyond what the structured payload supports.
+
+    Structured payload:
+    {analysis_payload}
+  expected_output: >
+    A polished markdown report with clear headings, short paragraphs, and actionable recommendations.
+  agent: librarian_writer
+  markdown: true
