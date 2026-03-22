@@ -155,6 +155,25 @@ ZIPs may contain documents only, images only, or both. Unsupported files are ign
 
 ## How It Works
 
+The diagram below focuses on the internal pipeline that runs for each job:
+
+```mermaid
+flowchart TD
+    A["Uploaded ZIP"] --> B["Safe extract into job workspace"]
+    B --> C["Classify supported and ignored files"]
+    C --> D["Group exact duplicates with SHA-256"]
+    C --> E["Run texvec on documents"]
+    C --> F["Run picvec on images"]
+    E --> G["Build document clusters"]
+    F --> H["Build image clusters"]
+    D --> I["Save structured analysis"]
+    G --> I
+    H --> I
+    I --> J["CrewAI writes final markdown report"]
+```
+
+Everything up to the structured analysis stays local and deterministic. CrewAI only turns that analysis into the final markdown report.
+
 1. Omnivec safely extracts the uploaded ZIP into a job workspace.
 2. It classifies supported and ignored files.
 3. It computes SHA-256 hashes and groups exact duplicates.
