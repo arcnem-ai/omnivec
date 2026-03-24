@@ -1,17 +1,17 @@
 # Sample Assets
 
-This directory gives Omnivec a small real corpus for local demos.
+Use this directory to build a small demo ZIP for local runs and smoke tests.
 
-Contents:
+What is included:
 
 - `docs/`
   - text fixtures copied from the local `texvec` repo
-  - one intentional duplicate copy: `galaxies-copy.md`
+  - one intentional duplicate file: `galaxies-copy.md`
 - `images/`
   - image fixtures copied from the local `picvec` repo
-  - one intentional duplicate copy: `cat1-copy.jpg`
+  - one intentional duplicate file: `cat1-copy.jpg`
 
-To build a ZIP for the API:
+To create a ZIP for the API:
 
 ```bash
 cd sample_assets

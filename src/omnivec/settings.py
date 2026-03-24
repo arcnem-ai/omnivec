@@ -1,3 +1,5 @@
+"""Runtime settings and derived filesystem paths for Omnivec."""
+
 from __future__ import annotations
 
 from functools import lru_cache

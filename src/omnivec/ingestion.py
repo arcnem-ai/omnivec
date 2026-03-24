@@ -1,3 +1,5 @@
+"""ZIP safety checks, file inventory, and exact duplicate helpers."""
+
 from __future__ import annotations
 
 import hashlib
@@ -9,7 +11,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-from omnivec.schemas import DuplicateGroup
+from omnivec.schemas import AssetKind, DuplicateGroup
 
 SUPPORTED_DOCUMENT_SUFFIXES = {".txt", ".md", ".markdown"}
 SUPPORTED_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png"}
@@ -17,6 +19,8 @@ SUPPORTED_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png"}
 
 @dataclass(slots=True)
 class AssetInventory:
+    """Lists supported document files, image files, and ignored files."""
+
     documents: list[str]
     images: list[str]
     ignored: list[str]
@@ -40,12 +44,16 @@ def safe_extract_zip(zip_path: Path, destination: Path) -> None:
 
             relative_path = Path(info.filename)
             if relative_path.is_absolute() or ".." in relative_path.parts:
-                raise ValueError(f"ZIP entry {info.filename!r} would escape the extraction directory")
+                raise ValueError(
+                    f"ZIP entry {info.filename!r} would escape the extraction directory"
+                )
 
             target_path = destination / relative_path
             resolved_target = target_path.resolve()
             if os.path.commonpath([str(root), str(resolved_target)]) != str(root):
-                raise ValueError(f"ZIP entry {info.filename!r} would escape the extraction directory")
+                raise ValueError(
+                    f"ZIP entry {info.filename!r} would escape the extraction directory"
+                )
 
             target_path.parent.mkdir(parents=True, exist_ok=True)
             with archive.open(info) as source, target_path.open("wb") as output:
@@ -81,7 +89,7 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def group_exact_duplicates(root: Path, files: list[str], kind: str) -> list[DuplicateGroup]:
+def group_exact_duplicates(root: Path, files: list[str], kind: AssetKind) -> list[DuplicateGroup]:
     grouped: dict[str, list[str]] = defaultdict(list)
     for relative in files:
         grouped[sha256_file(root / relative)].append(relative)

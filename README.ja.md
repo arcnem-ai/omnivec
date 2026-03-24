@@ -12,6 +12,7 @@
   <a href="README.md">English</a> ·
   <a href="#インストール">インストール</a> ·
   <a href="#クイックスタート">クイックスタート</a> ·
+  <a href="#コードガイド">コードガイド</a> ·
   <a href="#api">API</a> ·
   <a href="#docker">Docker</a> ·
   <a href="#開発">開発</a>
@@ -19,17 +20,17 @@
 
 ---
 
-omnivecは、アセット整理のためのオープンソースAPIです。文書と画像をまとめたZIPを受け取り、文書類似は `texvec`、画像類似は `picvec` でローカル分析し、最後に小さなCrewAIクルーが重複、関連クラスタ、整理の提案を含むMarkdownレポートを書きます。
+omnivecは、文書と画像をまとめたZIPを受け取り、`texvec` と `picvec` でローカル類似分析を行い、次の2つを返します。
 
-Arcnem AIが開発しているomnivecは、私たちが好む実用的なAIツールの考え方を反映しています。重要な類似検索レイヤーはローカルに保ちつつ、1台のマシンでも小さなRailwayデプロイでも扱いやすい形です。
+- 構造化されたJSON分析結果
+- その分析結果から作るMarkdownレポート
 
-## omnivecの特徴
+## 最初に押さえること
 
-- ZIPを1回送るだけで、構造化レポートが返る
-- 類似検索と保存はローカル中心
-- 外部ベクトルデータベースは不要
-- curlで扱いやすいAPIファースト設計
-- 重複判定やクラスタリングは決定的に処理し、CrewAIはレポート生成に集中
+- 1回のアップロードごとに1つのジョブディレクトリを使います。
+- ZIP展開、ファイル分類、重複判定、類似検索、クラスタリングは決定的に処理されます。
+- CrewAIを使うのは最後のMarkdownレポート生成だけです。
+- コードを追うときは、まず `api.py` を見て、次に `jobs.py` を読むのが最短です。
 
 ## インストール
 
@@ -103,6 +104,33 @@ curl -H "X-API-Key: dev-secret" \
   http://127.0.0.1:8000/v1/jobs/<job_id>/report
 ```
 
+## コードガイド
+
+最初にコードを読むなら、`src/omnivec/api.py` と `src/omnivec/jobs.py` から始めるのがおすすめです。この2つで、リクエスト受付からレポート保存までの流れが見えます。
+
+| 知りたいこと | まず見る場所 | 次に見る場所 |
+|-------------|--------------|--------------|
+| リクエストがどこから入るか | `src/omnivec/api.py` | `src/omnivec/schemas.py` |
+| ZIPアップロード後に何が起きるか | `src/omnivec/jobs.py` | `src/omnivec/storage.py` |
+| ZIP展開とファイル分類の仕組み | `src/omnivec/ingestion.py` | `tests/test_ingestion.py` |
+| `texvec` と `picvec` の呼び出し方 | `src/omnivec/runners.py` | `tests/test_runners.py` |
+| 類似結果がどうクラスタになるか | `src/omnivec/clustering.py` | `tests/test_clustering.py` |
+| 最終レポートがどう作られるか | `src/omnivec/reporting.py` | `src/omnivec/crew.py` |
+| 実行時設定がどこで決まるか | `src/omnivec/settings.py` | `tests/test_settings.py` |
+| APIレスポンスの項目定義 | `src/omnivec/schemas.py` | `tests/test_api.py` |
+
+### 変更箇所の見つけ方
+
+| 変更したい内容 | 先に編集する場所 | 確認先 |
+|---------------|------------------|--------|
+| アップロード処理、認証、HTTPレスポンス | `src/omnivec/api.py`, `src/omnivec/schemas.py` | `tests/test_api.py` |
+| ジョブ状態遷移、エラー処理、TTLによる削除 | `src/omnivec/jobs.py`, `src/omnivec/storage.py` | `tests/test_jobs.py`, `tests/test_api.py` |
+| 対応ファイル形式やZIP安全性 | `src/omnivec/ingestion.py` | `tests/test_ingestion.py` |
+| runner初期化やCLI出力解析 | `src/omnivec/runners.py` | `tests/test_runners.py` |
+| クラスタリングの挙動 | `src/omnivec/clustering.py` | `tests/test_clustering.py` |
+| レポート内容やCrewAI連携 | `src/omnivec/reporting.py`, `src/omnivec/crew.py`, `src/omnivec/config/` | ローカルスモークテスト |
+| 環境変数やデフォルトパス | `src/omnivec/settings.py`, `README.md`, `README.ja.md` | `tests/test_settings.py` |
+
 ## よく使うコマンド
 
 整理されたコマンド群を使いたい場合は、同梱の `Makefile` を使えます。
@@ -110,6 +138,10 @@ curl -H "X-API-Key: dev-secret" \
 ```sh
 make help
 make sync
+make format
+make lint
+make typecheck
+make check
 make test
 make serve
 make sample-zip
@@ -119,7 +151,7 @@ make smoke-all
 おすすめの流れ:
 
 1. `make sync`
-2. `make test`
+2. `make check`
 3. `make serve`
 4. 別ターミナルで `make sample-zip`
 5. その後 `make smoke-all`
@@ -172,15 +204,15 @@ flowchart TD
     I --> J["CrewAI が最終<br/>Markdownレポートを生成"]
 ```
 
-構造化分析まではローカルかつ決定的に処理されます。CrewAI は、その分析結果を最終Markdownレポートへ整える役割だけを担います。
+構造化分析まではローカルかつ決定的に処理されます。CrewAI は、その保存済み分析結果を最終Markdownレポートへ整える役割だけを担います。
 
-1. アップロードされたZIPをジョブ用ワークスペースへ安全に展開します。
+1. アップロードされたZIPをジョブ用ワークスペースへ展開します。
 2. 対応ファイルと無視ファイルを分類します。
 3. SHA-256で完全一致重複をまとめます。
-4. 対応文書を `texvec` でインデックスします。
-5. 対応画像を `picvec` でインデックスします。
-6. 相互top-k検索から類似クラスタを作ります。
-7. 構造化された分析結果をCrewAIクルーへ渡し、最終Markdownレポートを生成します。
+4. 文書は `texvec`、画像は `picvec` で分析します。
+5. 相互近傍の結果からクラスタを作ります。
+6. 分析結果をディスクへ保存します。
+7. 保存済み分析結果からMarkdownレポートを生成します。
 
 ## サンプルアセット
 
@@ -266,16 +298,6 @@ Dockerfileでは:
 
 最初の実行時に、`texvec` と `picvec` は共有キャッシュへONNX Runtimeとデフォルトモデルをダウンロードします。
 
-## リポジトリ構成
-
-- `src/omnivec/api.py` FastAPIアプリとHTTPエンドポイント
-- `src/omnivec/jobs.py` ジョブ実行と分析オーケストレーション
-- `src/omnivec/runners.py` `texvec` と `picvec` のサブプロセス連携
-- `src/omnivec/crew.py` CrewAIレポートクルー
-- `src/omnivec/config/` CrewAI用YAML設定
-- `sample_assets/` ローカルデモ用コーパス
-- `tests/` 決定的なユニット/ APIテスト
-
 ## 対応プラットフォーム
 
 | デプロイ形態 | 主な対象 |
@@ -288,11 +310,21 @@ Dockerfileでは:
 
 ```sh
 uv sync
+uv run ruff format .
+uv run ruff check .
+uv run pyright
 uv run pytest
 uv run omnivec
 ```
 
 デフォルトのテストスイートはオフラインで動き、fake runner と fake report generator を使うため、OpenAI認証情報やモデルダウンロード、ネットワークアクセスは不要です。
+
+おすすめのローカルチェック:
+
+- `uv run ruff format .` でPythonコードを整形します。
+- `uv run ruff check .` でlintとimport順を確認します。
+- `uv run pyright` で型チェックを行います。
+- `uv run pytest` でオフラインのテストスイートを実行します。
 
 コントリビュート手順は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。AIエージェント向けのリポジトリ固有ルールは [AGENTS.md](AGENTS.md) にあります。
 

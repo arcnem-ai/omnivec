@@ -10,12 +10,16 @@ import httpx
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run a full sample Omnivec workflow against a live server.")
+    parser = argparse.ArgumentParser(
+        description="Run a full sample Omnivec workflow against a live server."
+    )
     parser.add_argument("--base-url", default="http://127.0.0.1:8000", help="Base API URL")
     parser.add_argument("--api-key", default="dev-secret", help="API key for /v1 endpoints")
     parser.add_argument("--zip-path", default="sample-assets.zip", help="ZIP file to upload")
     parser.add_argument("--timeout-seconds", type=int, default=180, help="Maximum wait time")
-    parser.add_argument("--poll-interval", type=float, default=1.0, help="Polling interval in seconds")
+    parser.add_argument(
+        "--poll-interval", type=float, default=1.0, help="Polling interval in seconds"
+    )
     args = parser.parse_args()
 
     zip_path = Path(args.zip_path)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from omnivec.schemas import JobState
@@ -20,7 +20,7 @@ def test_job_store_marks_incomplete_jobs_failed_and_cleans_old_results(tmp_path:
     store.update_status(
         finished.job_id,
         status=JobState.SUCCEEDED,
-        finished_at=datetime.now(UTC) - timedelta(hours=2),
+        finished_at=datetime.now(timezone.utc) - timedelta(hours=2),
     )
 
     store.mark_incomplete_jobs_failed()

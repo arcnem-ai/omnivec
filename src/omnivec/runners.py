@@ -1,3 +1,5 @@
+"""Thin wrappers around the `texvec` and `picvec` CLIs."""
+
 from __future__ import annotations
 
 import os
@@ -67,6 +69,8 @@ def parse_list_output(output: str) -> list[ParsedListEntry]:
 
 
 class BaseCliRunner:
+    """Shared subprocess behavior for similarity runners."""
+
     def __init__(self, settings: Settings, binary: str) -> None:
         self.settings = settings
         self.binary = binary
@@ -90,6 +94,8 @@ class BaseCliRunner:
 
 
 class TexvecRunner(BaseCliRunner):
+    """Document similarity runner with shared model cache wiring."""
+
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings, settings.texvec_bin)
         self.shared_home = settings.cache_dir / "texvec"
@@ -129,6 +135,8 @@ class TexvecRunner(BaseCliRunner):
 
 
 class PicvecRunner(BaseCliRunner):
+    """Image similarity runner with per-job HOME and shared cache wiring."""
+
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings, settings.picvec_bin)
         self.shared_user_home = settings.cache_dir / "picvec-home"
@@ -147,7 +155,9 @@ class PicvecRunner(BaseCliRunner):
             if self._shared_ready:
                 return
             self.shared_user_home.mkdir(parents=True, exist_ok=True)
-            self._run(["init"], env=self.build_env(self.shared_user_home), cwd=self.shared_user_home)
+            self._run(
+                ["init"], env=self.build_env(self.shared_user_home), cwd=self.shared_user_home
+            )
             self._shared_ready = True
 
     def prepare_job_home(self, job_dir: Path) -> Path:

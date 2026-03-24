@@ -1,12 +1,14 @@
+"""Convert reciprocal nearest-neighbor hits into connected clusters."""
+
 from __future__ import annotations
 
 from collections import defaultdict, deque
 
-from omnivec.schemas import SearchHit, SimilarityCluster, SimilarityEdge
+from omnivec.schemas import AssetKind, SearchHit, SimilarityCluster, SimilarityEdge
 
 
 def build_reciprocal_clusters(
-    kind: str,
+    kind: AssetKind,
     search_results: dict[str, list[SearchHit]],
 ) -> list[SimilarityCluster]:
     top_hits: dict[str, dict[str, float]] = {}
@@ -23,7 +25,11 @@ def build_reciprocal_clusters(
             if source not in reverse:
                 continue
 
-            pair = tuple(sorted((source, target)))
+            pair: tuple[str, str]
+            if source <= target:
+                pair = (source, target)
+            else:
+                pair = (target, source)
             if pair in seen_pairs:
                 continue
             seen_pairs.add(pair)
@@ -63,9 +69,7 @@ def build_reciprocal_clusters(
     for index, members in enumerate(components, start=1):
         member_set = set(members)
         cluster_edges = [
-            edge
-            for edge in edges
-            if edge.source in member_set and edge.target in member_set
+            edge for edge in edges if edge.source in member_set and edge.target in member_set
         ]
         cluster_edges.sort(key=lambda edge: (edge.distance, edge.source, edge.target))
         clusters.append(

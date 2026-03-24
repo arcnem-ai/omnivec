@@ -9,6 +9,7 @@ requires-python = ">=3.10,<3.14"
 dependencies = [
     "crewai[tools]==1.11.0",
     "fastapi==0.116.1",
+    "httpx==0.28.1",
     "pydantic-settings==2.10.1",
     "pytest==8.4.2",
     "python-multipart==0.0.20",
@@ -31,3 +32,28 @@ build-backend = "hatchling.build"
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+[tool.uv]
+dev-dependencies = [
+    "pyright>=1.1.408",
+    "ruff>=0.15.7",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests", "scripts"]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pyright]
+include = ["src", "tests", "scripts"]
+pythonVersion = "3.10"
+typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"
+
+[[tool.pyright.executionEnvironments]]
+root = "."
+extraPaths = ["src"]

@@ -58,7 +58,9 @@ def test_picvec_prepare_job_home_bootstraps_missing_schema(tmp_path: Path) -> No
     (runner.shared_picvec_home / "lib").mkdir(parents=True, exist_ok=True)
     (runner.shared_picvec_home / "config.json").write_text('{"default_model":"clip"}')
     connection = sqlite3.connect(runner.shared_picvec_home / "picvec.db")
-    connection.execute("CREATE TABLE IF NOT EXISTS image_embeddings (image_id TEXT, model_id TEXT, embedding BLOB)")
+    connection.execute(
+        "CREATE TABLE IF NOT EXISTS image_embeddings (image_id TEXT, model_id TEXT, embedding BLOB)"
+    )
     connection.commit()
     connection.close()
     runner._shared_ready = True
@@ -72,7 +74,11 @@ def test_picvec_prepare_job_home_bootstraps_missing_schema(tmp_path: Path) -> No
 
     job_db = stale_home / "picvec.db"
     job_config = stale_home / "config.json"
-    tables = sqlite3.connect(job_db).execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+    tables = (
+        sqlite3.connect(job_db)
+        .execute("SELECT name FROM sqlite_master WHERE type='table'")
+        .fetchall()
+    )
 
     assert ("image_embeddings",) in tables
     assert job_config.exists()

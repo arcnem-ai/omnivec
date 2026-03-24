@@ -13,12 +13,16 @@ VENV_OMNIVEC ?= .venv/bin/omnivec
 CURL_API_KEY := $(strip $(API_KEY))
 CURL_AUTH_HEADER = $(if $(CURL_API_KEY),-H "X-API-Key: $(CURL_API_KEY)",)
 
-.PHONY: help sync test serve warm-cache sample-zip health create-job job-status job-report smoke-all docker-build check-venv
+.PHONY: help sync format lint typecheck check test serve warm-cache sample-zip health create-job job-status job-report smoke-all docker-build check-venv
 
 help:
 	@printf "%s\n" \
 	"Omnivec commands:" \
 	"  make sync         Install or update Python dependencies" \
+	"  make format       Format Python files with Ruff" \
+	"  make lint         Run Ruff lint checks" \
+	"  make typecheck    Run Pyright" \
+	"  make check        Run lint, typecheck, and tests" \
 	"  make test         Run the pytest suite" \
 	"  make serve        Warm shared caches, then start the local API server" \
 	"  make warm-cache   Pre-initialize shared texvec/picvec runtime and model caches" \
@@ -38,6 +42,17 @@ sync:
 
 check-venv:
 	@test -x "$(VENV_PYTHON)" || (echo "Run 'make sync' first." && exit 1)
+
+format: check-venv
+	uv run ruff format .
+
+lint: check-venv
+	uv run ruff check .
+
+typecheck: check-venv
+	uv run pyright
+
+check: lint typecheck test
 
 test: check-venv
 	$(VENV_PYTEST)

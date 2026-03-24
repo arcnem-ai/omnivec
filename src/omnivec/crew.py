@@ -1,3 +1,8 @@
+"""CrewAI wiring used only for the final report-writing step."""
+
+from collections.abc import Callable
+from typing import cast
+
 from crewai import Agent, Crew, Process, Task
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from crewai.project import CrewBase, agent, crew, task
@@ -5,7 +10,7 @@ from crewai.project import CrewBase, agent, crew, task
 
 @CrewBase
 class AssetLibrarianCrew:
-    """CrewAI report generator for Omnivec."""
+    """CrewAI configuration that turns saved analysis into a markdown report."""
 
     agents: list[BaseAgent]
     tasks: list[Task]
@@ -39,9 +44,10 @@ class AssetLibrarianCrew:
 
     @task
     def report_task(self) -> Task:
+        inventory_analysis_task = cast(Callable[[], Task], self.inventory_analysis_task)
         return Task(
             config=self.tasks_config["report_task"],  # type: ignore[index]
-            context=[self.inventory_analysis_task()],
+            context=[inventory_analysis_task()],
         )
 
     @crew
@@ -52,3 +58,11 @@ class AssetLibrarianCrew:
             process=Process.sequential,
             verbose=False,
         )
+
+
+def create_asset_librarian_crew(llm_model: str) -> Crew:
+    """Build a CrewAI crew with the configured model."""
+
+    crew_builder = AssetLibrarianCrew()
+    setattr(crew_builder, "llm_model", llm_model)
+    return crew_builder.crew()

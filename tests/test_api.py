@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from fastapi.testclient import TestClient
-
 from tests.conftest import build_test_client, make_zip_bytes, wait_for_job
 
 

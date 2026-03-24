@@ -12,6 +12,7 @@
   <a href="README.ja.md">日本語</a> ·
   <a href="#install">Install</a> ·
   <a href="#quick-start">Quick Start</a> ·
+  <a href="#code-tour">Code Tour</a> ·
   <a href="#api">API</a> ·
   <a href="#docker">Docker</a> ·
   <a href="#development">Development</a>
@@ -19,17 +20,17 @@
 
 ---
 
-omnivec is an open-source API for asset curation. It accepts a ZIP of documents and images, runs text similarity through `texvec`, image similarity through `picvec`, and asks a small CrewAI crew to write a balanced markdown report with duplicate groups, related clusters, and cleanup recommendations.
+omnivec accepts a ZIP of documents and images, runs local similarity analysis with `texvec` and `picvec`, and returns:
 
-Built by Arcnem AI, omnivec reflects how we like to ship applied AI tools: local-first where it matters, inspectable, and practical to run on one box or in a small Railway deployment.
+- structured JSON analysis
+- a markdown report written from that analysis
 
-## Why omnivec
+## What To Know First
 
-- One upload in, structured report out.
-- Local retrieval and local storage. Your indexed artifacts stay on your machine or your mounted volume.
-- No external vector database. `texvec` and `picvec` keep the similarity layer local.
-- API-first shape. Easy to script with curl, wrap in another service, or deploy on Railway.
-- Deterministic core. CrewAI writes the report, but indexing, duplicate detection, and clustering stay outside the agents.
+- One upload creates one job directory on disk.
+- ZIP extraction, file classification, duplicate detection, similarity search, and clustering are deterministic.
+- CrewAI is only used for the final markdown report.
+- The fastest way to understand the code is `api.py` -> `jobs.py` -> the helper module for the part you want to change.
 
 ## Install
 
@@ -103,6 +104,33 @@ curl -H "X-API-Key: dev-secret" \
   http://127.0.0.1:8000/v1/jobs/<job_id>/report
 ```
 
+## Code Tour
+
+If you are reading the code for the first time, start with `src/omnivec/api.py` and `src/omnivec/jobs.py`. Those two files show the full request path before the work splits into helpers.
+
+| If you want to understand... | Start here | Then check |
+|------------------------------|------------|------------|
+| how a request enters the app | `src/omnivec/api.py` | `src/omnivec/schemas.py` |
+| what happens after a ZIP upload | `src/omnivec/jobs.py` | `src/omnivec/storage.py` |
+| how ZIPs are unpacked and files are classified | `src/omnivec/ingestion.py` | `tests/test_ingestion.py` |
+| how `texvec` and `picvec` are called | `src/omnivec/runners.py` | `tests/test_runners.py` |
+| how similarity hits become clusters | `src/omnivec/clustering.py` | `tests/test_clustering.py` |
+| how the final report is generated | `src/omnivec/reporting.py` | `src/omnivec/crew.py` |
+| which settings shape runtime behavior | `src/omnivec/settings.py` | `tests/test_settings.py` |
+| which response fields are part of the API | `src/omnivec/schemas.py` | `tests/test_api.py` |
+
+### Common Change Paths
+
+| To change... | Edit these files first | Check here |
+|--------------|------------------------|------------|
+| upload flow, auth, or HTTP response shape | `src/omnivec/api.py`, `src/omnivec/schemas.py` | `tests/test_api.py` |
+| job lifecycle, error handling, or cleanup | `src/omnivec/jobs.py`, `src/omnivec/storage.py` | `tests/test_jobs.py`, `tests/test_api.py` |
+| supported file types or ZIP safety rules | `src/omnivec/ingestion.py` | `tests/test_ingestion.py` |
+| runner setup or CLI parsing | `src/omnivec/runners.py` | `tests/test_runners.py` |
+| clustering behavior | `src/omnivec/clustering.py` | `tests/test_clustering.py` |
+| report content or CrewAI wiring | `src/omnivec/reporting.py`, `src/omnivec/crew.py`, `src/omnivec/config/` | local smoke test |
+| environment variables or default paths | `src/omnivec/settings.py`, `README.md`, `README.ja.md` | `tests/test_settings.py` |
+
 ## Common Commands
 
 If you prefer a clean command surface, use the included `Makefile`:
@@ -110,6 +138,10 @@ If you prefer a clean command surface, use the included `Makefile`:
 ```sh
 make help
 make sync
+make format
+make lint
+make typecheck
+make check
 make test
 make serve
 make sample-zip
@@ -119,7 +151,7 @@ make smoke-all
 Useful workflow:
 
 1. `make sync`
-2. `make test`
+2. `make check`
 3. `make serve`
 4. In another terminal, `make sample-zip`
 5. Then `make smoke-all`
@@ -172,15 +204,15 @@ flowchart TD
     I --> J["CrewAI writes final markdown report"]
 ```
 
-Everything up to the structured analysis stays local and deterministic. CrewAI only turns that analysis into the final markdown report.
+Everything up to the structured analysis stays local and deterministic. CrewAI only turns that saved analysis into the final markdown report.
 
-1. Omnivec safely extracts the uploaded ZIP into a job workspace.
-2. It classifies supported and ignored files.
-3. It computes SHA-256 hashes and groups exact duplicates.
-4. It indexes supported documents with `texvec`.
-5. It indexes supported images with `picvec`.
-6. It runs reciprocal top-k searches and forms connected similarity clusters.
-7. It feeds the structured analysis into a small CrewAI crew that writes the final markdown report.
+1. Extract the uploaded ZIP into a job workspace.
+2. Split files into supported and ignored groups.
+3. Group exact duplicates with SHA-256.
+4. Run `texvec` for documents and `picvec` for images.
+5. Turn reciprocal nearest-neighbor hits into clusters.
+6. Save the analysis to disk.
+7. Generate the markdown report from the saved analysis.
 
 ## Sample Assets
 
@@ -266,16 +298,6 @@ Recommended Railway setup:
 
 On first real run, `texvec` and `picvec` will download ONNX Runtime and their default models into the shared cache under the mounted volume.
 
-## Repository Layout
-
-- `src/omnivec/api.py` FastAPI app and HTTP surface
-- `src/omnivec/jobs.py` job execution and analysis orchestration
-- `src/omnivec/runners.py` subprocess integration with `texvec` and `picvec`
-- `src/omnivec/crew.py` CrewAI report crew
-- `src/omnivec/config/` CrewAI YAML config
-- `sample_assets/` local demo corpus
-- `tests/` deterministic unit and API coverage
-
 ## Platforms
 
 | Deployment Mode | Primary Target |
@@ -288,11 +310,21 @@ On first real run, `texvec` and `picvec` will download ONNX Runtime and their de
 
 ```sh
 uv sync
+uv run ruff format .
+uv run ruff check .
+uv run pyright
 uv run pytest
 uv run omnivec
 ```
 
 The default test suite is offline and uses fake runners plus a fake report generator, so it does not require OpenAI credentials, model downloads, or network access.
+
+Recommended local checks:
+
+- `uv run ruff format .` formats Python code.
+- `uv run ruff check .` runs lint checks and import sorting rules.
+- `uv run pyright` runs type checks.
+- `uv run pytest` runs the offline test suite.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution workflow and [AGENTS.md](AGENTS.md) for repo-specific agent instructions.
 

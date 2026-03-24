@@ -1,10 +1,16 @@
+"""Report generation layer.
+
+Structured analysis comes in here after the deterministic pipeline finishes.
+This module turns that saved analysis into markdown.
+"""
+
 from __future__ import annotations
 
 import json
 import os
 from typing import Protocol
 
-from omnivec.crew import AssetLibrarianCrew
+from omnivec.crew import create_asset_librarian_crew
 from omnivec.schemas import AssetAnalysis
 from omnivec.settings import Settings
 
@@ -14,6 +20,8 @@ class ReportGenerator(Protocol):
 
 
 class CrewAIReportGenerator:
+    """CrewAI-backed report generator used for the final summary step."""
+
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
 
@@ -22,9 +30,7 @@ class CrewAIReportGenerator:
             raise RuntimeError("OPENAI_API_KEY is required to generate CrewAI reports")
 
         os.environ.setdefault("CREWAI_TRACING_ENABLED", "false")
-        crew = AssetLibrarianCrew()
-        crew.llm_model = self.settings.llm_model
-        result = crew.crew().kickoff(
+        result = create_asset_librarian_crew(self.settings.llm_model).kickoff(
             inputs={
                 "analysis_payload": build_analysis_payload(analysis),
             }

@@ -1,3 +1,9 @@
+"""HTTP entrypoints for Omnivec.
+
+Keep this module thin. Request handlers should validate input, hand work to
+`JobService`, and shape responses.
+"""
+
 from __future__ import annotations
 
 import shutil
@@ -17,6 +23,7 @@ def create_app(
     settings: Settings | None = None,
     job_service: JobService | None = None,
 ) -> FastAPI:
+    """Build the FastAPI app with the default store, runners, and reporter."""
     settings = settings or get_settings()
 
     if job_service is None:
@@ -85,7 +92,9 @@ def create_app(
         try:
             record = service.get_status(job_id)
         except FileNotFoundError as exc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found") from exc
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
+            ) from exc
         return JobStatusResponse(
             **record.model_dump(),
             status_url=_status_url(job_id),
@@ -102,7 +111,9 @@ def create_app(
         try:
             status_record = service.get_status(job_id)
         except FileNotFoundError as exc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found") from exc
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
+            ) from exc
 
         if status_record.status != JobState.SUCCEEDED:
             raise HTTPException(

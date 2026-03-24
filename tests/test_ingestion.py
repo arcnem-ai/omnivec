@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import stat
 import zipfile
 from pathlib import Path
-import stat
 
 import pytest
 

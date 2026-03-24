@@ -1,19 +1,23 @@
+"""Job orchestration from uploaded ZIP to saved report."""
+
 from __future__ import annotations
 
 import threading
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from omnivec.clustering import build_reciprocal_clusters
 from omnivec.ingestion import classify_assets, group_exact_duplicates, safe_extract_zip
 from omnivec.reporting import ReportGenerator
 from omnivec.runners import SimilarityRunner
-from omnivec.schemas import AssetAnalysis, FileCounts, JobState, JobStatusRecord
+from omnivec.schemas import AssetAnalysis, AssetKind, FileCounts, JobState, JobStatusRecord
 from omnivec.settings import Settings
 from omnivec.storage import JobStore
 
 
 class AssetAnalyzer:
+    """Build structured analysis for one uploaded ZIP."""
+
     def __init__(
         self,
         settings: Settings,
@@ -32,7 +36,8 @@ class AssetAnalyzer:
         inventory = classify_assets(extract_dir)
         if inventory.supported_count == 0:
             raise ValueError(
-                "ZIP archive does not contain any supported .txt, .md, .markdown, .jpg, .jpeg, or .png files"
+                "ZIP archive does not contain any supported "
+                ".txt, .md, .markdown, .jpg, .jpeg, or .png files"
             )
 
         document_duplicates = group_exact_duplicates(extract_dir, inventory.documents, "document")
@@ -71,7 +76,7 @@ class AssetAnalyzer:
     def _analyze_similarity(
         self,
         *,
-        kind: str,
+        kind: AssetKind,
         runner: SimilarityRunner,
         job_dir: Path,
         extract_dir: Path,
@@ -84,7 +89,9 @@ class AssetAnalyzer:
         search_results = {
             file_path: [
                 hit
-                for hit in runner.search(job_dir, extract_dir, file_path, self.settings.max_neighbors)
+                for hit in runner.search(
+                    job_dir, extract_dir, file_path, self.settings.max_neighbors
+                )
                 if hit.path in files
             ]
             for file_path in files
@@ -93,6 +100,8 @@ class AssetAnalyzer:
 
 
 class JobService:
+    """Own job lifecycle, background execution, and persisted artifacts."""
+
     def __init__(
         self,
         settings: Settings,
@@ -133,7 +142,7 @@ class JobService:
             self.store.update_status(
                 job_id,
                 status=JobState.RUNNING,
-                started_at=datetime.now(UTC),
+                started_at=datetime.now(timezone.utc),
                 error=None,
             )
             try:
@@ -154,7 +163,7 @@ class JobService:
                     counts=analysis.counts,
                     analysis_ready=True,
                     report_ready=True,
-                    finished_at=datetime.now(UTC),
+                    finished_at=datetime.now(timezone.utc),
                 )
             except Exception as exc:
                 counts = self._best_effort_counts(job_id)
@@ -163,7 +172,7 @@ class JobService:
                     status=JobState.FAILED,
                     counts=counts,
                     error=str(exc),
-                    finished_at=datetime.now(UTC),
+                    finished_at=datetime.now(timezone.utc),
                 )
             finally:
                 self.store.cleanup_expired_jobs()

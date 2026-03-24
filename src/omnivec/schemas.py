@@ -1,10 +1,14 @@
+"""Pydantic models shared across the API, jobs, and persistence layers."""
+
 from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Literal
+from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, Field
+
+AssetKind: TypeAlias = Literal["document", "image"]
 
 
 class JobState(str, Enum):
@@ -34,13 +38,13 @@ class SimilarityEdge(BaseModel):
 
 class SimilarityCluster(BaseModel):
     cluster_id: str
-    kind: Literal["document", "image"]
+    kind: AssetKind
     members: list[str] = Field(default_factory=list)
     edges: list[SimilarityEdge] = Field(default_factory=list)
 
 
 class DuplicateGroup(BaseModel):
-    kind: Literal["document", "image"]
+    kind: AssetKind
     sha256: str
     files: list[str] = Field(default_factory=list)
 

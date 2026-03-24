@@ -1,16 +1,20 @@
+"""File-backed persistence for job status, analysis, and reports."""
+
 from __future__ import annotations
 
 import shutil
 import threading
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from omnivec.schemas import AssetAnalysis, FileCounts, JobState, JobStatusRecord
+from omnivec.schemas import AssetAnalysis, JobState, JobStatusRecord
 from omnivec.settings import Settings
 
 
 class JobStore:
+    """Read and write job artifacts under `OMNIVEC_DATA_DIR`."""
+
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self._lock = threading.Lock()
@@ -51,7 +55,9 @@ class JobStore:
         return self.job_dir(job_id) / "report.md"
 
     def save_status(self, record: JobStatusRecord) -> None:
-        self._write_text(self.status_path(record.job_id), record.model_dump_json(indent=2, exclude_none=True))
+        self._write_text(
+            self.status_path(record.job_id), record.model_dump_json(indent=2, exclude_none=True)
+        )
 
     def load_status(self, job_id: str) -> JobStatusRecord:
         path = self.status_path(job_id)
@@ -121,4 +127,4 @@ class JobStore:
 
 
 def _utcnow() -> datetime:
-    return datetime.now(UTC)
+    return datetime.now(timezone.utc)
