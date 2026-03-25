@@ -21,7 +21,7 @@ def main() -> None:
         for relative in sorted(
             path.relative_to(source)
             for path in source.rglob("*")
-            if path.is_file() and path.name != "README.md"
+            if path.is_file()
         ):
             archive.write(source / relative, arcname=relative.as_posix())
             included.append(relative.as_posix())
