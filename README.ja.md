@@ -97,6 +97,16 @@ curl -X POST \
 
 最終レポートの方向づけをしたい場合は、`-F "curation_goal=discovery"`、`dedupe`、`taxonomy_cleanup` を追加できます。
 
+## 開発
+
+標準のローカルテストは次で実行します:
+
+```sh
+uv run pytest
+```
+
+GitHub Actions では、同じ `uv run pytest` を pull request と `main` への push で実行します。
+
 ## API
 
 | エンドポイント | 内容 |

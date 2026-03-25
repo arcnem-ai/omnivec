@@ -97,6 +97,16 @@ curl -X POST \
 
 You can optionally add `-F "curation_goal=discovery"`, `dedupe`, or `taxonomy_cleanup` to bias the final report.
 
+## Development
+
+Run the default local test suite with:
+
+```sh
+uv run pytest
+```
+
+GitHub Actions runs the same `uv run pytest` command for pull requests and pushes to `main`.
+
 ## API
 
 | Endpoint | What it does |
