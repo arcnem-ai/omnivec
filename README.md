@@ -64,6 +64,8 @@ export OMNIVEC_DATA_DIR=$PWD/.omnivec-data
 export OMNIVEC_API_KEY=dev-secret
 ```
 
+Create `OPENAI_API_KEY` in the [OpenAI Platform API keys page](https://platform.openai.com/settings/organization/api-keys).
+
 If you prefer, put those values in `.env`. The included `Makefile` automatically loads `.env` when it exists.
 
 ## Quick Start

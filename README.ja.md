@@ -64,6 +64,8 @@ export OMNIVEC_DATA_DIR=$PWD/.omnivec-data
 export OMNIVEC_API_KEY=dev-secret
 ```
 
+`OPENAI_API_KEY` は [OpenAI Platform の API keys ページ](https://platform.openai.com/settings/organization/api-keys) で作成できます。
+
 必要なら、これらの値を `.env` に入れても構いません。同梱の `Makefile` は `.env` が存在すれば自動で読み込みます。
 
 ## クイックスタート
