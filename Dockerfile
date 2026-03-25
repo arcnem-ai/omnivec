@@ -5,7 +5,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 ARG PICVEC_REF=37feab91433fe57660edd77495718ee2ef47ba62
-ARG TEXVEC_REF=5683bc7786779b8fed995c38bd5a82e8392b66a2
+ARG TEXVEC_REF=b1744a0511474e1afa53ec63b19e29e31e1141cb
 
 RUN git clone https://github.com/arcnem-ai/picvec.git /src/picvec \
     && git -C /src/picvec checkout "${PICVEC_REF}" \

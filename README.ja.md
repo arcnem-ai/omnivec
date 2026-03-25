@@ -282,6 +282,7 @@ docker run --rm \
 Dockerfileでは:
 
 - 固定リビジョンの `picvec` と `texvec` をGoステージでビルド
+- 現在の `texvec` ピンは `v1.1.0`
 - Python依存を `uv` でインストール
 - Uvicornでomnivec APIを起動
 

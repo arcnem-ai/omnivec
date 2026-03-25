@@ -14,7 +14,7 @@ from typing import NamedTuple, Protocol
 from omnivec.schemas import SearchHit
 from omnivec.settings import Settings
 
-SEARCH_RESULT_RE = re.compile(r"^\s*(?P<distance>\d+(?:\.\d+)?)\s+(?P<path>.+?)\s*$")
+SEARCH_RESULT_RE = re.compile(r"^(?P<distance>\d+(?:\.\d+)?)\s+(?P<path>.+?)\s*$")
 LIST_RESULT_RE = re.compile(r"^(?P<path>.+?)\s+\[(?P<models>.*)\]\s*$")
 
 
@@ -35,7 +35,7 @@ class ParsedListEntry(NamedTuple):
 def parse_search_output(output: str) -> list[SearchHit]:
     results: list[SearchHit] = []
     for raw_line in output.splitlines():
-        line = raw_line.strip()
+        line = raw_line.rstrip()
         if not line or line == "No results found.":
             continue
 

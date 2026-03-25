@@ -43,6 +43,17 @@ def test_parse_search_output_reads_distance_and_path() -> None:
     assert hits[0].distance == 0.1
 
 
+def test_parse_search_output_ignores_texvec_chunk_evidence_lines() -> None:
+    hits = parse_search_output(
+        "0.1000  docs/a.md\n"
+        "        0.1100  lines 3-5: supporting chunk preview\n"
+        "0.2500  docs/b.md\n"
+        "        0.2600  line 9: another supporting chunk\n"
+    )
+
+    assert [hit.path for hit in hits] == ["docs/a.md", "docs/b.md"]
+
+
 def test_parse_list_output_reads_models() -> None:
     entries = parse_list_output("docs/a.md  [all-minilm-l6-v2, bge-small-en-v1.5]\n")
 

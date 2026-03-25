@@ -282,6 +282,7 @@ docker run --rm \
 The Dockerfile:
 
 - builds pinned `picvec` and `texvec` binaries in a Go stage,
+- currently pins `texvec` to `v1.1.0`,
 - installs Python dependencies with `uv`,
 - runs omnivec with Uvicorn.
 
