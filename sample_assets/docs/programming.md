@@ -1,10 +1,17 @@
 # Go command-line tools
 
-Command-line tools in Go are popular because deployment is simple and startup time is low.
-Libraries like Cobra make it easy to structure commands and flags without adding much ceremony.
+Command-line tools in Go are popular because deployment is simple, binaries are portable, and startup time is usually low. That combination matters when a tool becomes part of a daily workflow. People reach for CLIs when they want something dependable, scriptable, and fast enough to feel invisible. A tool that adds friction at startup, prints inconsistent output, or changes its behavior based on too many hidden rules quickly stops feeling trustworthy.
 
-Well-designed CLIs keep their output predictable.
-That matters for scripting, debugging, and long-term maintenance.
+Good CLI design begins with predictable verbs and a small set of memorable flags. Users should not have to guess whether a command is called `index`, `add`, `ingest`, or `embed` if the tool already has an established vocabulary. Once names are chosen, they should stay stable. Backward-compatible command design is not just politeness; it protects shell history, scripts, documentation, and team habits. A small tool earns trust when it behaves the same way today as it did last week.
 
-Small packages with clear responsibilities are usually easier to test.
-That same discipline also makes refactors less risky.
+Libraries like Cobra help structure commands and flags without adding much ceremony. They are especially useful when a project has multiple subcommands, shared configuration, and a need for consistent help text. Even with a framework in place, though, the command layer should stay thin. Argument parsing, user-facing validation, and output formatting belong close to the command. Business logic, indexing pipelines, and storage operations are easier to maintain when they live in dedicated packages with smaller responsibilities.
+
+Output deserves as much care as internal architecture. A CLI that prints one stable shape is easier to scan, easier to document, and easier to pipe into other tools. Human-readable output does not need to be verbose to be rich. Often the best pattern is a concise top line with a small amount of supporting detail beneath it. The key is consistency. If a result line sometimes means one thing and sometimes another, users start second-guessing what they are seeing.
+
+Testing is where a command-line tool proves whether its design is real or only aspirational. Small packages with clear seams are easier to test with temporary files, temporary databases, and injected dependencies. Deterministic tests matter even more in local AI tools, where model downloads, runtime setup, and filesystem state can otherwise create flaky behavior. The best test suite isolates indexing logic from network access and keeps sample inputs simple enough to reason about while still being large enough to exercise chunking, ranking, and formatting.
+
+Performance usually follows from architectural restraint. A local search tool does not need to do the most sophisticated possible retrieval step at every stage. It can first use a cheap or compact representation to narrow the field, then do more detailed work on the shortlisted candidates. That staged approach often feels better than a single global query that tries to do everything at once. In a text search CLI, summary vectors can rank documents while chunk vectors explain the ranking inside each chosen result.
+
+The Unix philosophy still helps here. Each command should have a clear job. `init` prepares the environment, `embed` indexes content, `search` retrieves results, and `list` shows what is already stored. That separation makes the tool easier to teach and easier to debug. It also makes future extensions less risky because new features can be introduced as focused commands instead of being crammed into one overloaded workflow.
+
+Documentation completes the loop. README examples should match real command behavior, sample data should be large enough to demonstrate meaningful retrieval, and defaults should reflect the product's opinionated path. When a CLI has a strong default way of working, flags should usually control quantity rather than semantics. It is often cleaner to let users choose how many results they see than to make them choose among multiple ranking philosophies. A useful search tool feels coherent because the command shape, output format, and internal retrieval strategy all point in the same direction.
