@@ -90,6 +90,9 @@ curl -X POST \
   http://127.0.0.1:8000/v1/jobs
 ```
 
+You can optionally bias the final CrewAI report with `curation_goal`:
+`discovery`, `dedupe`, or `taxonomy_cleanup`.
+
 Check status:
 
 ```sh
@@ -160,6 +163,10 @@ Useful workflow:
 
 `make create-job`, `make job-status`, `make job-report`, and `make smoke-all` use `OMNIVEC_API_KEY` from `.env` by default, and fall back to `dev-secret` only when it is unset.
 
+You can also set `CURATION_GOAL=discovery`, `dedupe`, or `taxonomy_cleanup` with
+`make create-job` or `make smoke-all`.
+Both commands print a small upload request summary before sending the job.
+
 You can also inspect a specific job manually:
 
 ```sh
@@ -177,6 +184,13 @@ make job-report JOB_ID=<job_id>
 | `GET /healthz` | Liveness check |
 
 If `OMNIVEC_API_KEY` is set, all `/v1/*` endpoints require `X-API-Key`.
+
+`POST /v1/jobs` accepts multipart form fields:
+
+- `file` for the ZIP upload
+- optional `curation_goal` with `discovery`, `dedupe`, or `taxonomy_cleanup`
+
+When `curation_goal` is omitted, the final report stays balanced.
 
 ### Supported Inputs
 

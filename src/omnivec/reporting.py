@@ -11,12 +11,14 @@ import os
 from typing import Protocol
 
 from omnivec.crew import create_asset_librarian_crew
-from omnivec.schemas import AssetAnalysis
+from omnivec.schemas import AssetAnalysis, CurationGoal
 from omnivec.settings import Settings
 
 
 class ReportGenerator(Protocol):
-    def generate_report(self, analysis: AssetAnalysis) -> str: ...
+    def generate_report(
+        self, analysis: AssetAnalysis, curation_goal: CurationGoal | None = None
+    ) -> str: ...
 
 
 class CrewAIReportGenerator:
@@ -25,14 +27,16 @@ class CrewAIReportGenerator:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
 
-    def generate_report(self, analysis: AssetAnalysis) -> str:
+    def generate_report(
+        self, analysis: AssetAnalysis, curation_goal: CurationGoal | None = None
+    ) -> str:
         if not self.settings.openai_api_key:
             raise RuntimeError("OPENAI_API_KEY is required to generate CrewAI reports")
 
         os.environ.setdefault("CREWAI_TRACING_ENABLED", "false")
         result = create_asset_librarian_crew(self.settings.llm_model).kickoff(
             inputs={
-                "analysis_payload": build_analysis_payload(analysis),
+                "analysis_payload": build_analysis_payload(analysis, curation_goal),
             }
         )
         report = getattr(result, "raw", str(result)).strip()
@@ -41,8 +45,11 @@ class CrewAIReportGenerator:
         return report
 
 
-def build_analysis_payload(analysis: AssetAnalysis) -> str:
+def build_analysis_payload(
+    analysis: AssetAnalysis, curation_goal: CurationGoal | None = None
+) -> str:
     payload = {
+        "curation_goal": curation_goal.value if curation_goal is not None else None,
         "counts": analysis.counts.model_dump(),
         "documents": analysis.document_files,
         "images": analysis.image_files,

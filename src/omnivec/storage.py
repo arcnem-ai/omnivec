@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from omnivec.schemas import AssetAnalysis, JobState, JobStatusRecord
+from omnivec.schemas import AssetAnalysis, CurationGoal, JobState, JobStatusRecord
 from omnivec.settings import Settings
 
 
@@ -22,12 +22,15 @@ class JobStore:
     def prepare(self) -> None:
         self.settings.prepare_directories()
 
-    def create_job(self, filename: str) -> JobStatusRecord:
+    def create_job(
+        self, filename: str, curation_goal: CurationGoal | None = None
+    ) -> JobStatusRecord:
         job_id = uuid4().hex
         now = _utcnow()
         record = JobStatusRecord(
             job_id=job_id,
             filename=filename,
+            curation_goal=curation_goal,
             status=JobState.QUEUED,
             created_at=now,
             updated_at=now,

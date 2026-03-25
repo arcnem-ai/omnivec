@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from omnivec.api import create_app
 from omnivec.jobs import AssetAnalyzer, JobService
 from omnivec.runners import SimilarityRunner
-from omnivec.schemas import AssetAnalysis, JobState, SearchHit
+from omnivec.schemas import AssetAnalysis, CurationGoal, JobState, SearchHit
 from omnivec.settings import Settings
 from omnivec.storage import JobStore
 
@@ -40,9 +40,15 @@ class FakeSimilarityRunner(SimilarityRunner):
 
 
 class FakeReportGenerator:
-    def generate_report(self, analysis: AssetAnalysis) -> str:
+    def generate_report(
+        self,
+        analysis: AssetAnalysis,
+        curation_goal: CurationGoal | None = None,
+    ) -> str:
+        goal_label = curation_goal.value if curation_goal is not None else "balanced"
         return (
             "# Asset Librarian Report\n\n"
+            f"Curation goal: {goal_label}\n\n"
             f"Supported files: {analysis.counts.total_supported}\n\n"
             f"Documents: {analysis.counts.documents}\n"
             f"Images: {analysis.counts.images}\n"

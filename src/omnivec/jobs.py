@@ -10,7 +10,14 @@ from omnivec.clustering import build_reciprocal_clusters
 from omnivec.ingestion import classify_assets, group_exact_duplicates, safe_extract_zip
 from omnivec.reporting import ReportGenerator
 from omnivec.runners import SimilarityRunner
-from omnivec.schemas import AssetAnalysis, AssetKind, FileCounts, JobState, JobStatusRecord
+from omnivec.schemas import (
+    AssetAnalysis,
+    AssetKind,
+    CurationGoal,
+    FileCounts,
+    JobState,
+    JobStatusRecord,
+)
 from omnivec.settings import Settings
 from omnivec.storage import JobStore
 
@@ -120,9 +127,11 @@ class JobService:
         self.store.mark_incomplete_jobs_failed()
         self.store.cleanup_expired_jobs()
 
-    def create_job(self, filename: str) -> JobStatusRecord:
+    def create_job(
+        self, filename: str, curation_goal: CurationGoal | None = None
+    ) -> JobStatusRecord:
         self.store.cleanup_expired_jobs()
-        return self.store.create_job(filename)
+        return self.store.create_job(filename, curation_goal=curation_goal)
 
     def start_job(self, job_id: str) -> None:
         thread = threading.Thread(target=self._run_job, args=(job_id,), daemon=True)
@@ -139,7 +148,7 @@ class JobService:
 
     def _run_job(self, job_id: str) -> None:
         with self._semaphore:
-            self.store.update_status(
+            status_record = self.store.update_status(
                 job_id,
                 status=JobState.RUNNING,
                 started_at=datetime.now(timezone.utc),
@@ -154,7 +163,10 @@ class JobService:
                     analysis_ready=True,
                 )
 
-                report = self.report_generator.generate_report(analysis)
+                report = self.report_generator.generate_report(
+                    analysis,
+                    curation_goal=status_record.curation_goal,
+                )
                 self.store.save_report(job_id, report)
 
                 self.store.update_status(

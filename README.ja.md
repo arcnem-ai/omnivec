@@ -90,6 +90,9 @@ curl -X POST \
   http://127.0.0.1:8000/v1/jobs
 ```
 
+CrewAIレポートの方向づけをしたい場合は、任意で `curation_goal` を指定できます:
+`discovery`、`dedupe`、`taxonomy_cleanup`。
+
 状態確認:
 
 ```sh
@@ -160,6 +163,10 @@ make smoke-all
 
 `make create-job`、`make job-status`、`make job-report`、`make smoke-all` は、デフォルトで `.env` の `OMNIVEC_API_KEY` を使い、未設定時のみ `dev-secret` にフォールバックします。
 
+`make create-job` と `make smoke-all` では、`CURATION_GOAL=discovery`、
+`dedupe`、`taxonomy_cleanup` も指定できます。
+どちらのコマンドも送信前にアップロード内容の要約を表示します。
+
 特定ジョブを個別に確認したい場合:
 
 ```sh
@@ -177,6 +184,13 @@ make job-report JOB_ID=<job_id>
 | `GET /healthz` | ヘルスチェック |
 
 `OMNIVEC_API_KEY` が設定されている場合、`/v1/*` には `X-API-Key` が必要です。
+
+`POST /v1/jobs` は次のmultipart formフィールドを受け付けます:
+
+- ZIPアップロード用の `file`
+- 任意の `curation_goal`。値は `discovery`、`dedupe`、`taxonomy_cleanup`
+
+`curation_goal` を省略した場合、最終レポートはバランス重視になります。
 
 ### 対応入力
 

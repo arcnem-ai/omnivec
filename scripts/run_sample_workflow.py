@@ -8,6 +8,29 @@ from pathlib import Path
 
 import httpx
 
+from omnivec.schemas import CurationGoal
+
+
+def build_upload_request_summary(
+    *, base_url: str, zip_path: Path, api_key: str, form_data: dict[str, str]
+) -> dict[str, object]:
+    return {
+        "method": "POST",
+        "url": f"{base_url.rstrip('/')}/v1/jobs",
+        "headers": {
+            "X-API-Key": "[redacted]" if api_key else "[unset]",
+        },
+        "multipart_form": {
+            "fields": form_data,
+            "file": {
+                "field_name": "file",
+                "filename": zip_path.name,
+                "content_type": "application/zip",
+                "path": str(zip_path),
+            },
+        },
+    }
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -16,6 +39,11 @@ def main() -> None:
     parser.add_argument("--base-url", default="http://127.0.0.1:8000", help="Base API URL")
     parser.add_argument("--api-key", default="dev-secret", help="API key for /v1 endpoints")
     parser.add_argument("--zip-path", default="sample-assets.zip", help="ZIP file to upload")
+    parser.add_argument(
+        "--curation-goal",
+        choices=[goal.value for goal in CurationGoal],
+        help="Optional report bias for the uploaded job",
+    )
     parser.add_argument("--timeout-seconds", type=int, default=180, help="Maximum wait time")
     parser.add_argument(
         "--poll-interval", type=float, default=1.0, help="Polling interval in seconds"
@@ -27,11 +55,25 @@ def main() -> None:
         raise SystemExit(f"ZIP file not found: {zip_path}")
 
     headers = {"X-API-Key": args.api_key}
+    form_data = {}
+    if args.curation_goal:
+        form_data["curation_goal"] = args.curation_goal
+
+    request_summary = build_upload_request_summary(
+        base_url=args.base_url,
+        zip_path=zip_path,
+        api_key=args.api_key,
+        form_data=form_data,
+    )
+    print("--- upload_request ---")
+    print(json.dumps(request_summary, indent=2))
+
     with httpx.Client(base_url=args.base_url, timeout=60.0) as client:
         with zip_path.open("rb") as handle:
             response = client.post(
                 "/v1/jobs",
                 headers=headers,
+                data=form_data,
                 files={"file": (zip_path.name, handle, "application/zip")},
             )
         response.raise_for_status()

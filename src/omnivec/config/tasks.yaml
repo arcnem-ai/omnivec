@@ -1,6 +1,15 @@
 inventory_analysis_task:
   description: >
     Review the structured Omnivec analysis payload below and identify the most important findings.
+    The payload may include an optional `curation_goal` that tells you what kind of report
+    the user wants most.
+    Treat the goals this way:
+    - `discovery`: highlight themes, relationships, and coverage gaps that make the collection easier to explore.
+    - `dedupe`: prioritize exact duplicates, likely redundant clusters, and the safest cleanup actions.
+    - `taxonomy_cleanup`: focus on naming consistency, folder or path patterns, candidate groupings,
+      and simple organization rules.
+    - `null`: keep the analysis balanced between discovery and cleanup.
+
     Focus on:
     1. high-signal duplicate groups,
     2. meaningful document relationships,
@@ -21,6 +30,12 @@ report_task:
   description: >
     Write the final markdown asset librarian report for this upload.
     Use the analyst memo plus the original structured payload below.
+    The payload may include an optional `curation_goal` that changes the report's point of view.
+    Use it like this:
+    - `discovery`: lean toward exploration, themes, and collection coverage.
+    - `dedupe`: lean toward redundancy reduction and safest cleanup steps.
+    - `taxonomy_cleanup`: lean toward naming, grouping, and organization guidance.
+    - `null`: keep the report balanced.
 
     The report should:
     - open with a short overview,

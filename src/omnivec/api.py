@@ -9,12 +9,19 @@ from __future__ import annotations
 import shutil
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile, status
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile, status
 
 from omnivec.jobs import AssetAnalyzer, JobService
 from omnivec.reporting import CrewAIReportGenerator
 from omnivec.runners import PicvecRunner, TexvecRunner
-from omnivec.schemas import JobCreateResponse, JobReportResponse, JobState, JobStatusResponse
+from omnivec.schemas import (
+    CurationGoal,
+    JobCreateResponse,
+    JobReportResponse,
+    JobState,
+    JobStatusRecord,
+    JobStatusResponse,
+)
 from omnivec.settings import Settings, get_settings
 from omnivec.storage import JobStore
 
@@ -72,15 +79,22 @@ def create_app(
         status_code=status.HTTP_202_ACCEPTED,
         dependencies=[Depends(require_api_key)],
     )
-    async def create_job(request: Request, file: UploadFile = File(...)) -> JobCreateResponse:
+    async def create_job(
+        request: Request,
+        file: UploadFile = File(...),
+        curation_goal: CurationGoal | None = Form(default=None),
+    ) -> JobCreateResponse:
         service: JobService = request.app.state.job_service
-        record = service.create_job(file.filename or "upload.zip")
+        record = service.create_job(
+            file.filename or "upload.zip",
+            curation_goal=curation_goal,
+        )
         upload_path = service.store.upload_path(record.job_id)
         with upload_path.open("wb") as output:
             shutil.copyfileobj(file.file, output)
 
         service.start_job(record.job_id)
-        return _job_create_response(record.job_id)
+        return _job_create_response(record)
 
     @app.get(
         "/v1/jobs/{job_id}",
@@ -125,6 +139,7 @@ def create_app(
         report_markdown = service.get_report(job_id)
         return JobReportResponse(
             job_id=job_id,
+            curation_goal=status_record.curation_goal,
             report_markdown=report_markdown,
             counts=analysis.counts,
             ignored_files=analysis.ignored_files,
@@ -136,12 +151,13 @@ def create_app(
     return app
 
 
-def _job_create_response(job_id: str) -> JobCreateResponse:
+def _job_create_response(record: JobStatusRecord) -> JobCreateResponse:
     return JobCreateResponse(
-        job_id=job_id,
+        job_id=record.job_id,
+        curation_goal=record.curation_goal,
         status=JobState.QUEUED,
-        status_url=_status_url(job_id),
-        report_url=_report_url(job_id),
+        status_url=_status_url(record.job_id),
+        report_url=_report_url(record.job_id),
     )
 
 

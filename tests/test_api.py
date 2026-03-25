@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from omnivec.schemas import CurationGoal
+
 from tests.conftest import build_test_client, make_zip_bytes, wait_for_job
 
 
@@ -24,6 +26,37 @@ def test_create_job_without_api_key_configured_is_allowed(tmp_path) -> None:
 
     assert response.status_code == 202
     assert status_payload["status"] == "succeeded"
+
+
+def test_create_job_accepts_curation_goal_and_returns_it(tmp_path, auth_headers) -> None:
+    with build_test_client(tmp_path) as client:
+        response = client.post(
+            "/v1/jobs",
+            headers=auth_headers,
+            data={"curation_goal": CurationGoal.DEDUPE.value},
+            files={"file": ("assets.zip", make_zip_bytes({"doc.md": b"hello"}), "application/zip")},
+        )
+        payload = response.json()
+        status_payload = wait_for_job(client, payload["job_id"], headers=auth_headers)
+        report = client.get(payload["report_url"], headers=auth_headers).json()
+
+    assert response.status_code == 202
+    assert payload["curation_goal"] == CurationGoal.DEDUPE.value
+    assert status_payload["curation_goal"] == CurationGoal.DEDUPE.value
+    assert report["curation_goal"] == CurationGoal.DEDUPE.value
+    assert "Curation goal: dedupe" in report["report_markdown"]
+
+
+def test_create_job_rejects_unknown_curation_goal(tmp_path, auth_headers) -> None:
+    with build_test_client(tmp_path) as client:
+        response = client.post(
+            "/v1/jobs",
+            headers=auth_headers,
+            data={"curation_goal": "archive_prep"},
+            files={"file": ("assets.zip", make_zip_bytes({"doc.md": b"hello"}), "application/zip")},
+        )
+
+    assert response.status_code == 422
 
 
 def test_mixed_pack_returns_report_and_clusters(tmp_path, auth_headers) -> None:

@@ -18,6 +18,12 @@ class JobState(str, Enum):
     FAILED = "failed"
 
 
+class CurationGoal(str, Enum):
+    DISCOVERY = "discovery"
+    DEDUPE = "dedupe"
+    TAXONOMY_CLEANUP = "taxonomy_cleanup"
+
+
 class FileCounts(BaseModel):
     documents: int = 0
     images: int = 0
@@ -62,6 +68,7 @@ class AssetAnalysis(BaseModel):
 class JobStatusRecord(BaseModel):
     job_id: str
     filename: str
+    curation_goal: CurationGoal | None = None
     status: JobState
     created_at: datetime
     updated_at: datetime
@@ -75,6 +82,7 @@ class JobStatusRecord(BaseModel):
 
 class JobCreateResponse(BaseModel):
     job_id: str
+    curation_goal: CurationGoal | None = None
     status: JobState
     status_url: str
     report_url: str
@@ -87,6 +95,7 @@ class JobStatusResponse(JobStatusRecord):
 
 class JobReportResponse(BaseModel):
     job_id: str
+    curation_goal: CurationGoal | None
     report_markdown: str
     counts: FileCounts
     ignored_files: list[str]
