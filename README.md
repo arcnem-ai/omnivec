@@ -32,6 +32,8 @@ omnivec accepts a ZIP of documents and images, runs local similarity analysis wi
 - CrewAI is only used for the final markdown report.
 - The fastest way to understand the code is `api.py` -> `jobs.py` -> the helper module for the part you want to change.
 
+If you want ideas for where to take the codebase next, see [Extending Omnivec](docs/extending-omnivec.md).
+
 ## Install
 
 Ensure you have Python `>=3.10,<3.14` and [uv](https://docs.astral.sh/uv/) installed.

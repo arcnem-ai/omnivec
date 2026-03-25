@@ -32,6 +32,8 @@ omnivecは、文書と画像をまとめたZIPを受け取り、`texvec` と `pi
 - CrewAIを使うのは最後のMarkdownレポート生成だけです。
 - コードを追うときは、まず `api.py` を見て、次に `jobs.py` を読むのが最短です。
 
+このコードベースをどう広げていけるかの案は [Extending Omnivec](docs/extending-omnivec.md) を参照してください。
+
 ## インストール
 
 Python `>=3.10,<3.14` と [uv](https://docs.astral.sh/uv/) を用意してください。
